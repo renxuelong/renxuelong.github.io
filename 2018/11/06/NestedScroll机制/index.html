@@ -87,12 +87,12 @@
 <meta property="og:site_name" content="任雪龙的博客">
 <meta property="og:description" content="一、概述有关 Android 滑动机制以及两个都可以滑动的 View 在滑动过程中可能产生的滑动冲突问题我们之前已经专门分析过了，一般遇到滑动冲突问题时我们都通过自己修改父 View 或者子 View 的事件分发方法来解决。但是在有些情况下这个方式并不能解决我们的需求。 例如下面 gif 图中的效果，Inner 部分是一个 ScrollView，Out 部分是一个 ScrollView，整个 In">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://raw.githubusercontent.com/renxuelong/HexoBlog/master/Resource/nested_stcoll.gif">
-<meta property="og:updated_time" content="2018-11-07T11:23:29.684Z">
+<meta property="og:image" content="https://raw.githubusercontent.com/renxuelong/HexoBlog/master/Resource/2018-11/nested_scroll.gif">
+<meta property="og:updated_time" content="2018-11-27T09:19:20.609Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="NestedScroll机制">
 <meta name="twitter:description" content="一、概述有关 Android 滑动机制以及两个都可以滑动的 View 在滑动过程中可能产生的滑动冲突问题我们之前已经专门分析过了，一般遇到滑动冲突问题时我们都通过自己修改父 View 或者子 View 的事件分发方法来解决。但是在有些情况下这个方式并不能解决我们的需求。 例如下面 gif 图中的效果，Inner 部分是一个 ScrollView，Out 部分是一个 ScrollView，整个 In">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/renxuelong/HexoBlog/master/Resource/nested_stcoll.gif">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/renxuelong/HexoBlog/master/Resource/2018-11/nested_scroll.gif">
 
 
 
@@ -368,7 +368,7 @@
         <h2 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h2><p>有关 Android 滑动机制以及两个都可以滑动的 View 在滑动过程中可能产生的滑动冲突问题我们之前已经专门分析过了，一般遇到滑动冲突问题时我们都通过自己修改父 View 或者子 View 的事件分发方法来解决。但是在有些情况下这个方式并不能解决我们的需求。</p>
 <p>例如下面 gif 图中的效果，Inner 部分是一个 ScrollView，Out 部分是一个 ScrollView，整个 Inner 部分是在 Out 的一部分</p>
 <a id="more"></a>
-<p><img src="https://raw.githubusercontent.com/renxuelong/HexoBlog/master/Resource/nested_stcoll.gif" alt="NestedScroll"></p>
+<p><img src="https://raw.githubusercontent.com/renxuelong/HexoBlog/master/Resource/2018-11/nested_scroll.gif" alt="NestedScroll"></p>
 <p>在开发时如果只时为 InnerScrollView 设置对应的高度，最终效果就会是 InnerScrollView 部分并不能滑动，并且如果高度不够时 InnerScrollView 内容会展示不全。为了解决这个问题我们可以通过自定义 ScrollView 修改事件分发方法来实现 InnerScrollView 支持滑动，但是其滑动到顶部或者底部时并不能平滑的将滑动事件交给外部的 ScrollView。</p>
 <p>这时候我们可以进一步改写 ScrollView 的事件分发方法使其支持 InnerScrollView 滑动到底部或者顶部后的其他事件重新由 Out 来处理，但在同一个事件序列中，InnerScrollView 就再也不能处理滑动事件了。所以这时候为了实现图中的效果我们就必须通过其他的方式来实现。</p>
 <p>这阵子在研究 CoordinatorLayout 来实现一些滑动效果，发现了两个神奇的接口 <strong>NestedScrollingParent</strong> 和 <strong>NestedScrollingChild</strong>。这两个接口都是 support 包中提供的，顾名思义，这就是 Google 提供的支持处理嵌套滑动的接口。</p>
@@ -496,6 +496,10 @@
 
           <div class="post-nav-prev post-nav-item">
             
+              <a href="/2018/11/27/LayoutInflater源码解析-md/" rel="prev" title="LayoutInflater源码解析.md">
+                LayoutInflater源码解析.md <i class="fa fa-chevron-right"></i>
+              </a>
+            
           </div>
         </div>
       
@@ -611,7 +615,7 @@ var jiathis_config={
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-count">3</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -622,7 +626,7 @@ var jiathis_config={
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-count">2</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
