@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon_normal.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon_small.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Android,源码解析,Framwork," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="一、理解 Android 的 WindowWindow 表示一个窗口的概念，是一个抽象的概念，每一个 Window 都对应一个 View 和一个 ViewRootImpl，Window 和 View 通过 ViewRootImpl 来建立联系，因此 Window 并不是实际存在的，它是以 View 的形式存在。 Android 中的每个窗口 View 都有一个对应的 Window，例如 Activ">
+<meta name="keywords" content="Android,源码解析,Framwork">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android中的Window和WindowManagerService">
+<meta property="og:url" content="http://renxuelong.com/2018/11/28/Android中的Window和WindowManagerService/index.html">
+<meta property="og:site_name" content="任雪龙的博客">
+<meta property="og:description" content="一、理解 Android 的 WindowWindow 表示一个窗口的概念，是一个抽象的概念，每一个 Window 都对应一个 View 和一个 ViewRootImpl，Window 和 View 通过 ViewRootImpl 来建立联系，因此 Window 并不是实际存在的，它是以 View 的形式存在。 Android 中的每个窗口 View 都有一个对应的 Window，例如 Activ">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-11-28T08:28:39.521Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android中的Window和WindowManagerService">
+<meta name="twitter:description" content="一、理解 Android 的 WindowWindow 表示一个窗口的概念，是一个抽象的概念，每一个 Window 都对应一个 View 和一个 ViewRootImpl，Window 和 View 通过 ViewRootImpl 来建立联系，因此 Window 并不是实际存在的，它是以 View 的形式存在。 Android 中的每个窗口 View 都有一个对应的 Window，例如 Activ">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://renxuelong.com/2018/11/28/Android中的Window和WindowManagerService/"/>
+
+
+
+
+
+  <title>Android中的Window和WindowManagerService | 任雪龙的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">任雪龙的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://renxuelong.com/2018/11/28/Android中的Window和WindowManagerService/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="任雪龙">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="任雪龙的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android中的Window和WindowManagerService</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-28T16:24:57+08:00">
+                2018-11-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android源码/" itemprop="url" rel="index">
+                    <span itemprop="name">Android源码</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/11/28/Android中的Window和WindowManagerService/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2018/11/28/Android中的Window和WindowManagerService/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="一、理解-Android-的-Window"><a href="#一、理解-Android-的-Window" class="headerlink" title="一、理解 Android 的 Window"></a>一、理解 Android 的 Window</h2><p>Window 表示一个窗口的概念，是一个抽象的概念，每一个 Window 都对应一个 View 和一个 ViewRootImpl，Window 和 View 通过 ViewRootImpl 来建立联系，因此 <strong>Window 并不是实际存在的</strong>，它是以 View 的形式存在。</p>
+<p>Android 中的每个窗口 View 都有一个对应的 Window，例如 Activity、Dialog，在他们初始化的时候就会为其创建对应的 PhoneWindow 实例并赋值到其内部的一个引用。</p>
+<a id="more"></a>
+<h3 id="window-的层级"><a href="#window-的层级" class="headerlink" title="window 的层级"></a>window 的层级</h3><p>每个 window 都有其对应的层级，应用 window 在 1-99，子 window 在 1000-1999，系统 window 在 2000-2999 ，层级高的会覆盖层级低的。可以通过 <strong>WindowLayoutParams.setType</strong> 方法为 Window 设置层级。</p>
+<p>子 window 必须依赖于父 window 存在，例如 Dialog 必须在 Activity 中弹出，Dialog 中的 window 为子 window ，Activity 中的 window 为父 window。</p>
+<p>显示系统级别的 window 需要权限 <strong><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"></uses-permission></strong></p>
+<h3 id="WindowLayoutparams-的-flags"><a href="#WindowLayoutparams-的-flags" class="headerlink" title="WindowLayoutparams 的 flags"></a>WindowLayoutparams 的 flags</h3><p>FLAG_NOT_FOUCSABLE window 不需要获取焦点，也不需要接收各种输入事件，回同时启用 FLAG_NOT_TOUCH_MODAL</p>
+<p>FLAG_NOT_TOUCH_MODAL 系统会将当前 Window 区域外的单击事件传递给底层的 Window，在当前 Window 区域内的事件则自己处理</p>
+<p>FLAG_SHOW_WHEN_LOCKED 开启此模式让 window 显示在锁屏界面上</p>
+<h2 id="二、理解-Android-中的-WindowManager"><a href="#二、理解-Android-中的-WindowManager" class="headerlink" title="二、理解 Android 中的 WindowManager"></a>二、理解 Android 中的 WindowManager</h2><p>Android 中对 Window 的管理都是通过 WindowManager 来完成的，创建 PhoneWindow 之后还会为该 Window 对象设置 WindowManager ，WindowManager 是一个接口继承 ViewManager 接口，从这里也能看出对 Window 的操作其实就是对 View 的操作，WindowManager 的实现类是 WindowMangerImpl ，WindowMangerImpl 通过 new 创建。</p>
+<h2 id="三、Window-与-WindowManagerImpl-的关联"><a href="#三、Window-与-WindowManagerImpl-的关联" class="headerlink" title="三、Window 与 WindowManagerImpl 的关联"></a>三、Window 与 WindowManagerImpl 的关联</h2><p>Activity 和 Dialog 的创建过程中在创建了 PhoneWindow 以后，都会调用 window 的 setWindowManager 方法为自己的 Window 绑定 WindowManager</p>
+<p>通过 ContextImpl 的 getSystemService 可以得到一个 WindowManagerImpl 实例，同一 ContextImpl 得到的是同一个 WindowManagerImpl对象，得到 WindowMangerImpl 之后，再调用 Window 的 setWindowManager 方法建立 Window 与 WindowManagerImpl 之间的联系。</p>
+<p><strong>setWindowManager</strong> 中主要完成在 WindowManagerImpl 实例的基础上重新创建一个与当前 Window 绑定的 WindowManagerImpl，并为 Window 中的属性 mWindowManager 赋值,</p>
+<p>也就是说在 Java 层上 Window 与 WindowManager 建立了第一步联系，并将 Activity、Dialog 等中的 WindowManager 赋值为新的 WindowManagerImpl 对象。</p>
+<p><strong>注意：这里是使用单例的 WindowManagerImpl ，结合不同的 Window ，最后构建了与 Window 有关联的非单例的 WindowManagerImpl 对象</strong></p>
+<h2 id="四、对-Window-的操作"><a href="#四、对-Window-的操作" class="headerlink" title="四、对  Window 的操作"></a>四、对  Window 的操作</h2><h3 id="1-添加操作-WindowManagerImpl-addView，注意，是添加一个新的-Window-不是对一个-Window-中的-view-做操作"><a href="#1-添加操作-WindowManagerImpl-addView，注意，是添加一个新的-Window-不是对一个-Window-中的-view-做操作" class="headerlink" title="1. 添加操作 WindowManagerImpl.addView，注意，是添加一个新的 Window ,不是对一个 Window 中的 view 做操作"></a>1. 添加操作 WindowManagerImpl.addView，注意，是添加一个新的 Window ,不是对一个 Window 中的 view 做操作</h3><p>Android 中每显示一个窗口，其实就是将 View 显示到屏幕的过程，如果我们自定义一个要显示的布局，拿到 View 对象，这时候只要调用 WindowManagerImpl 对象的 addView 方法就行了，通过 ContextImpl 的 getSystemService 可以得到 WindowManagerImpl 实例</p>
+<p>WindowManagerImpl 对象，在 WindowManagerImpl 中存在一个单例存在的 WindowManagerGlobal 对象，在 WindowManagerImpl 的各个方法中，将任务的执行过程传递到了 WindowManagerGlobal 中，在传递过程中除了将 View、LayoutParams 传递，还将 WindowManagerImpl 中关联的 window 对象也一起传递</p>
+<h4 id="WindowManagerGlobal-的-addView-方法"><a href="#WindowManagerGlobal-的-addView-方法" class="headerlink" title="WindowManagerGlobal 的 addView 方法"></a>WindowManagerGlobal 的 addView 方法</h4><p>WindowMAnagerGlobal 中判断 view、LayoutParams 等参数合法性，创建 ViewRootImpl ，将 ViewRootImpl、View、LayoutParams 添加到 WindowMAnagerGlobal 中对应的 ArayyList 集合中，再调用 ViewRootImpl 的 setView 方法</p>
+<h4 id="ViewRootImpl"><a href="#ViewRootImpl" class="headerlink" title="ViewRootImpl"></a>ViewRootImpl</h4><p>继承自 Handler 类，是作为 native 层和 Java 层 View 系统通信的桥梁</p>
+<p>ViewRootImpl 创建时保存了创建其的线程的引用，开发过程中更新 View 时会判断当前线程是否是创建 ViewRootImpl 的线程，如果不是会抛出异常。</p>
+<p>Activity 和 Dialog 显示的时候都会调用 windowManager 的 addView 方法，由于他们运行在主线程，所以 Activity 中的 UI 需要在主线程更新。</p>
+<p>一般都是在主线程中创建 ViewRootImpl ，所以在子线程更新 UI 会抛出异常，是因为 ViewRootImpl 是 UI 线程中创建的，并不是因为只有 UI 线程才可以更新 UI</p>
+<p>在 Activity 的 onResume 之前如果在子线程中修改 UI 是不会抛出异常的，因为在 onResume 之 Activity 才调用 WindowManager 的 addView 方法，也就是 onResume 之后才创建 ViewRootImpl，之后更新 UI 会需要经过 ViewRootImpl 来更新，在 onResume 之前 Activity 的屏幕并没有显示，修改 UI 操作只是会修改 layout 中的 View 的属性，并不会调用 ViewRootImpl 的方法显示到屏幕上。</p>
+<p><strong>所以得出结论，只有 UI 显示到屏幕上之后，在更新 UI 时就会判断线程是否为创建 UI 的线程，如果不匹配则抛出异常，在 UI 没有显示到屏幕上时更新 UI 是不会进行线程判断的</strong></p>
+<h4 id="ViewRootImpl-的-setView-方法："><a href="#ViewRootImpl-的-setView-方法：" class="headerlink" title="ViewRootImpl 的 setView 方法："></a>ViewRootImpl 的 setView 方法：</h4><ol>
+<li><p>setView 方法中会首先调用 requestLayout() 方法，在这里进行线程判断，如果线程匹配则调用 scheduleTraversals() 完成 View 的测量、布局、绘制过程</p>
+</li>
+<li><p>setView 中接下来远程调用 IWindowSession 对象中的 addToDisplay 方法，将 window 等信息传递到 WMS 中调用 WMS 的 addWindow 方法完成最后window 在屏幕上的展示。</p>
+</li>
+</ol>
+<h4 id="IWindowSession-WindowManagerService"><a href="#IWindowSession-WindowManagerService" class="headerlink" title="IWindowSession WindowManagerService"></a>IWindowSession WindowManagerService</h4><p>这里是将 View 显示到屏幕上的关键，是将 View 从应用进程传递到系统进程然后完成显示的地方。 ViewRootImpl 中的 IWindowSession 对象是通过 WindowManagerGlobal 的静态方法 getWindowSession() 得到的，该方法中首先通过 <strong>ServiceManager</strong> 通过 Binder 进行 IPC 得到系统服务 WindowsManagerService 在应用进程的远程代理，然后通过 AIDL 通信的方式调用 WMS 的 openSession() 方法得到 IWindowSession 接口的实现类 Session 类远程代理对象，Session 类也是一个 Binder 所以可以跨进程传递</p>
+<p>在 Session 的远程代理的 addToDisplay 方法中通过 AIDL 将 window 信息传递到系统进程，然后调用 AMS 的 addWindow 方法，AMS 最后将 Window 中的 View 显示到屏幕上</p>
+<h3 id="2-删除操作，是删除一个屏幕上已有的-Window"><a href="#2-删除操作，是删除一个屏幕上已有的-Window" class="headerlink" title="2. 删除操作，是删除一个屏幕上已有的 Window"></a>2. 删除操作，是删除一个屏幕上已有的 Window</h3><p><strong>WindowManagerImpl.removeView</strong> 操作中，先通过 findViewLocked 查找要删除的 View，再通过 View 找到对应的 Window 的 ViewRootImpl ，将 View、LayoutParams、ViewRootImpl 从相对应的 ArrayList 中删除，再通过 IPC 调用 Session 的 remove 其中调用 WMS 的 removeWindow 方法，在屏幕上移除该 Window 对应的 View</p>
+<h3 id="3-更新操作"><a href="#3-更新操作" class="headerlink" title="3. 更新操作"></a>3. 更新操作</h3><p><strong>WindowManagerImpl.updateViewLayout</strong> ，为 view 设置新的 LayoutParams ，通过 findViewLocked 找到对应 ViewRootImpl，删除 LayoutParams 集合中旧的 LayoutParams，在集合原位置加入 新的 LayoutParams，调用 ViewRootImpl 的 setLayoutParams 完成 View 的重新测量，布局，绘制，最后通过 IPC 调用 Session 再调用 WMS 完成 window 的更新。</p>
+<h3 id="4-添加-Window-代码"><a href="#4-添加-Window-代码" class="headerlink" title="4. 添加 Window 代码"></a>4. 添加 Window 代码</h3><p>自定义的 Window 在创建过程中并没有主动的创建 Window，而是在显示的时候由系统维护，这里也体现了 Window 是一个抽象的概念，最终需要处理的还是 View</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">addWindow</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    TextView view = <span class="keyword">new</span> TextView(<span class="keyword">this</span>);</span><br><span class="line">    view.setText(<span class="string">"Text"</span>);</span><br><span class="line">    view.setOnClickListener(<span class="keyword">new</span> View.OnClickListener() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onClick</span><span class="params">(View v)</span> </span>&#123;</span><br><span class="line">            Log.i(<span class="string">"renxl"</span>, <span class="string">"onClick"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    view.setBackgroundColor(Color.RED); <span class="comment">// 要显示的 View 可以是新创建的，也可以是 LayoutInflater 从 xml 布局中获取的</span></span><br><span class="line"></span><br><span class="line">    WindowManager.LayoutParams mLayoutParams = <span class="keyword">new</span> WindowManager.LayoutParams(</span><br><span class="line">            WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT, <span class="number">0</span>, <span class="number">0</span>,</span><br><span class="line">            PixelFormat.TRANSPARENT); <span class="comment">// 必须是 WindowManager.LayoutParams</span></span><br><span class="line">    mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL; <span class="comment">// 三种 flag 从中选一</span></span><br><span class="line">    mLayoutParams.type = WindowManager.LayoutParams.TYPE_TOAST; <span class="comment">// type 表示优先级</span></span><br><span class="line">    mLayoutParams.gravity = Gravity.START | Gravity.TOP; </span><br><span class="line">    mLayoutParams.x = <span class="number">100</span>; <span class="comment">// 在屏幕上 X 轴位置</span></span><br><span class="line">    mLayoutParams.y = <span class="number">300</span>; <span class="comment">// 在屏幕上 Y 轴位置</span></span><br><span class="line"></span><br><span class="line">    WindowManager manager = (WindowManager) getSystemService(WINDOW_SERVICE);</span><br><span class="line">    manager.addView(view, mLayoutParams); <span class="comment">// 将 View 添加到界面上</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">**注意，如果是系统级别的 Window 也就是优先级超过 <span class="number">1999</span> 的，需要声明权限**</span><br><span class="line">&lt;uses-permission android:name=<span class="string">"android.permission.SYSTEM_ALERT_WINDOW"</span> /&gt;</span><br></pre></td></tr></table></figure>
+<h2 id="五、用户触摸屏幕事件处理流程"><a href="#五、用户触摸屏幕事件处理流程" class="headerlink" title="五、用户触摸屏幕事件处理流程"></a>五、用户触摸屏幕事件处理流程</h2><p>WMS 将事件 IPC 传递到 Window，Window 中调用其内部的 CallBack 对象也就是 Activity 或者 Dialog 对象的方法。最终将事件传递到 View，再通过 ViewRootImpl 将响应以后的 View 和对应 window IPC 提交到 WMS 完成响应后的展示。</p>
+<h2 id="六、常见-Window-的创建"><a href="#六、常见-Window-的创建" class="headerlink" title="六、常见 Window 的创建"></a>六、常见 Window 的创建</h2><h3 id="1-Activity-的-Window-创建过程"><a href="#1-Activity-的-Window-创建过程" class="headerlink" title="1. Activity 的 Window 创建过程"></a>1. Activity 的 Window 创建过程</h3><p>Activity 启动流程中，Activity 的 attach 方法中为 window 赋值为一个新的 PhoneWindow ，setContentView 将 layout 传递到 PhoneWindow 中，PhoneWindow 中通过 LayoutInflater 的 inflate 方法加载布局 View，并添加到 PhoneWindow 内部的 DecorView 中，在 onResume 的时候，调用 WindowManager 的 addView 方法将 Window 中的 DecorView 通过 WMS 显示到屏幕上</p>
+<p>Activity 在创建 Window 的时候，实现了 Window 的 Callback 接口中的方法，在 Window 收到触摸时，则会回调 Callback 中的方法将事件传递到 Activity 中，Activity 中会调对应 PhoneWindow 中的分发方法，PhoneWindow 中会调用 DecordView 中的方法， 最终将事件传递到 View 中。</p>
+<p><strong>猜测事件由 WMS 传递到 Window 再到 Activity 再到 Window 这样多一层 Activity 的原因是，开发者可以在 Activity 中处理事件，不一定非要传递到 View</strong></p>
+<h3 id="2-Dialog-的-Window-创建过程"><a href="#2-Dialog-的-Window-创建过程" class="headerlink" title="2. Dialog 的 Window 创建过程"></a>2. Dialog 的 Window 创建过程</h3><p>同 Activity，实例化 Dialog 对象时创建 PhoneWindow ，show 方法调用时通过 AIDL 调用 WMS 的 addView 方法将 View 添加到屏幕 </p>
+<h3 id="3-Toast-的-Window-创建过程"><a href="#3-Toast-的-Window-创建过程" class="headerlink" title="3. Toast 的 Window 创建过程"></a>3. Toast 的 Window 创建过程</h3><p>Toast 在创建过程中并没有主动的创建 Window，而是在显示的时候由系统维护 Toast 的 window，这里也体现了 Window 是一个抽象的概念，最终需要处理的还是 View</p>
+<p>Toast 的工作工程需要 TN NMS WMS 三个部分协同完成，IN 也是一个 Binder，将 TN 的远程代理提交到 WMS 是跨进程调用，NMS 中调用 TN 是跨进程访问，TN 调用 WMS 也是跨进程调用</p>
+<p><strong>NMS 即 NotificationManagerService</strong></p>
+<h4 id="Toast-的工作过程分为两步"><a href="#Toast-的工作过程分为两步" class="headerlink" title="Toast 的工作过程分为两步"></a>Toast 的工作过程分为两步</h4><ol>
+<li><p>第一步是当前线程中要先生成一个 Binder 类型的 TN 的对象，远程调用 NMS 中的 enquneue 方法将 TN 的远程代理传到 NMS 中，NMS 会立即远程调用 TN 的 show 方法，TN 的 show 方法运行在当前应用的 Binder 线程池中，通过 Handler 的 post 系列方法将进程切换到主线程，主线程再通过 WindowManager 来调用 WMS 中的方法完成 show 过程</p>
+</li>
+<li><p>NMS 中调用了 TN 的 show 方法之后，会通过自己内部的 Handler 延时发送一个时间为 Toast 展示时间的消息，NMS 中的 Handler 收到消息之后，再调用 TN 的 hide 方法(远程调用过程)，TN 中的 hide 方法又会通过 WindowManager 远程调用 WMS 中的 hide 方法，将 Toast 隐藏。完成整个过程。</p>
+</li>
+</ol>
+<h2 id="七、总结"><a href="#七、总结" class="headerlink" title="七、总结"></a>七、总结</h2><ol>
+<li><p>屏幕展示的每一个 window，都需要 window 和 View 两个相互结合，屏幕中可以有多个 Window。以下所说的 View 都是一个 Window 中包含的根 View</p>
+</li>
+<li><p>window 的创建以及对 View 的添加，删除、更新是由 WindowManager 来实现的，而 WindowManager 中对 window 的操作通过 每个 window 对应的 ViewRootImpl 中通过  IPC 远程请求 IWindowSession 中的方法再调用 WMS 的对应方法将对当前 window 操作的实现到屏幕上。</p>
+</li>
+<li><p>每一个 Window 都对应一个 ViewRootImpl ，window 通过对应的 ViewRootImpl 来完成对 view 的管理</p>
+</li>
+<li><p>在屏幕有用户交互的时候，WMS 又会将事件传递到相应界面的 Window，Window 会调用与其绑定的 CallBack 对象的方法来处理事件</p>
+</li>
+<li><p>WindowManager 是接口，实现类是 WindowManagerImpl，WindowManagerImpl 中又通过 WindowMAnagerGlobal 来完成操作。典型的桥接模式</p>
+</li>
+</ol>
+<h3 id="添加-Window-显示不出来问题"><a href="#添加-Window-显示不出来问题" class="headerlink" title="添加 Window 显示不出来问题"></a>添加 Window 显示不出来问题</h3><p>由于国内对于 ROM 的定制，多种机型会默认禁止应用对悬浮窗的创建，所以如果是没有显示，检查是否关闭了应用的权限。</p>
+<ol>
+<li><p>安卓 6.0 添加了对权限的开关设置，悬浮窗权限默认是关闭的</p>
+</li>
+<li><p>一些国内定制的 Rom 6.0 之前就可以设置权限的开关，悬浮窗权限默认关闭</p>
+</li>
+</ol>
+<h3 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h3><p>mLayoutParams.type = WindowManager.LayoutParams.TYPE_TOAST;</p>
+<p>将 type 设置为 TYPE_TOAST ， 源码中对 TYPE_TOAST 是没有任何限制的。</p>
+<p>在国内定制的 Rom 上，只有少数机型会在设置 TYPE_TOAST 的时候，View 的监听事件不能获取，显示都是可以的。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+            <a href="/tags/源码解析/" rel="tag"># 源码解析</a>
+          
+            <a href="/tags/Framwork/" rel="tag"># Framwork</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/11/27/Activity的getSystemService方法解密/" rel="next" title="Activity的getSystemService方法解密">
+                <i class="fa fa-chevron-left"></i> Activity的getSystemService方法解密
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.png"
+                alt="任雪龙" />
+            
+              <p class="site-author-name" itemprop="name">任雪龙</p>
+              <p class="site-description motion-element" itemprop="description">Keep moving forward</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/renxuelong" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:renxuelongvip@163.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-globe"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一、理解-Android-的-Window"><span class="nav-number">1.</span> <span class="nav-text">一、理解 Android 的 Window</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#window-的层级"><span class="nav-number">1.1.</span> <span class="nav-text">window 的层级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WindowLayoutparams-的-flags"><span class="nav-number">1.2.</span> <span class="nav-text">WindowLayoutparams 的 flags</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二、理解-Android-中的-WindowManager"><span class="nav-number">2.</span> <span class="nav-text">二、理解 Android 中的 WindowManager</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#三、Window-与-WindowManagerImpl-的关联"><span class="nav-number">3.</span> <span class="nav-text">三、Window 与 WindowManagerImpl 的关联</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#四、对-Window-的操作"><span class="nav-number">4.</span> <span class="nav-text">四、对  Window 的操作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-添加操作-WindowManagerImpl-addView，注意，是添加一个新的-Window-不是对一个-Window-中的-view-做操作"><span class="nav-number">4.1.</span> <span class="nav-text">1. 添加操作 WindowManagerImpl.addView，注意，是添加一个新的 Window ,不是对一个 Window 中的 view 做操作</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#WindowManagerGlobal-的-addView-方法"><span class="nav-number">4.1.1.</span> <span class="nav-text">WindowManagerGlobal 的 addView 方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ViewRootImpl"><span class="nav-number">4.1.2.</span> <span class="nav-text">ViewRootImpl</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ViewRootImpl-的-setView-方法："><span class="nav-number">4.1.3.</span> <span class="nav-text">ViewRootImpl 的 setView 方法：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#IWindowSession-WindowManagerService"><span class="nav-number">4.1.4.</span> <span class="nav-text">IWindowSession WindowManagerService</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-删除操作，是删除一个屏幕上已有的-Window"><span class="nav-number">4.2.</span> <span class="nav-text">2. 删除操作，是删除一个屏幕上已有的 Window</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-更新操作"><span class="nav-number">4.3.</span> <span class="nav-text">3. 更新操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-添加-Window-代码"><span class="nav-number">4.4.</span> <span class="nav-text">4. 添加 Window 代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#五、用户触摸屏幕事件处理流程"><span class="nav-number">5.</span> <span class="nav-text">五、用户触摸屏幕事件处理流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#六、常见-Window-的创建"><span class="nav-number">6.</span> <span class="nav-text">六、常见 Window 的创建</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Activity-的-Window-创建过程"><span class="nav-number">6.1.</span> <span class="nav-text">1. Activity 的 Window 创建过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Dialog-的-Window-创建过程"><span class="nav-number">6.2.</span> <span class="nav-text">2. Dialog 的 Window 创建过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Toast-的-Window-创建过程"><span class="nav-number">6.3.</span> <span class="nav-text">3. Toast 的 Window 创建过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Toast-的工作过程分为两步"><span class="nav-number">6.3.1.</span> <span class="nav-text">Toast 的工作过程分为两步</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#七、总结"><span class="nav-number">7.</span> <span class="nav-text">七、总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#添加-Window-显示不出来问题"><span class="nav-number">7.1.</span> <span class="nav-text">添加 Window 显示不出来问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#问题解决"><span class="nav-number">7.2.</span> <span class="nav-text">问题解决</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">任雪龙</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://renxuelong.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://renxuelong.com/2018/11/28/Android中的Window和WindowManagerService/';
+          this.page.identifier = '2018/11/28/Android中的Window和WindowManagerService/';
+          this.page.title = 'Android中的Window和WindowManagerService';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://renxuelong.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
